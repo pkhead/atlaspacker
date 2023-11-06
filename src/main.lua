@@ -13,11 +13,12 @@ if os.getenv("LOCAL_LUA_DEBUGGER_VSCODE") == "1" then
     end
 end
 
-local runDir = arg[1]
-
-local dlExt = jit.os == "Windows" and "dll" or jit.os == "OSX" and "dylib" or "so"
-package.path = runDir .. "/?/init.lua;" .. package.path
-package.cpath = package.cpath .. (";"..runDir.."/cimgui/?.%s"):format(dlExt)
+if not love.filesystem.isFused() then
+    local runDir = arg[1]
+    local dlExt = jit.os == "Windows" and "dll" or jit.os == "OSX" and "dylib" or "so"
+    package.path = runDir .. "/?/init.lua;" .. package.path
+    package.cpath = package.cpath .. (";"..runDir.."/cimgui/?.%s"):format(dlExt)
+end
 
 _G.imgui = require("cimgui")
 local ffi = require("ffi")
