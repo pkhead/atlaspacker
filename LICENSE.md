@@ -1,3 +1,28 @@
+## Licensing Information
+This distribution contains code from the following projects (full license text below):
+
+- cimgui-love
+	+ Website: https://github.com/apicici/cimgui-love
+	+ License: MIT License
+	+ Copyright (c) 2021 apicici
+- cimgui
+	+ Website: https://github.com/cimgui/cimgui
+	+ License: MIT License
+	+ Copyright (c) 2015 Stephan Dilly
+- Dear ImGui
+	+ Website: https://github.com/ocornut/imgui
+	+ License: MIT License
+	+ Copyright (c) 2014-2021 Omar Cornut
+- love-imgui
+	+ Website: https://github.com/slages/love-imgui
+	+ License: MIT License
+	+ Copyright (c) 2016 slages
+- Proggy Fonts
+	+ Website: https://github.com/bluescan/proggyfonts
+	+ License: MIT License
+	+ Copyright (c) 2004, 2005 Tristan Grimmer
+
+## atlaspacker license
 Copyright 2023 pkhead
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software
