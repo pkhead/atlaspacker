@@ -30,7 +30,8 @@ local function readData(fileData)
     if string.sub(fileData, 1, 5) == "Atlas" then
         version, offset = str_unpack("<I1", fileData, 6)
     else
-        print("WARNING: Atlas file does not begin with signature. Proceeding anyway for compatibility purposes...")
+        -- level is 3 because this function is called by Atlas.load
+        error("invalid atlas file", 3)
     end
     
     local resScale = 1
@@ -146,12 +147,18 @@ function Atlas:release()
     self.quadData = nil
 end
 
+-- Returns true if this atlas has an animation of the given name
+-- @param animName The name query
+function Atlas:hasAnim(animName)
+    return self.animations[animName] ~= nil
+end
+
 -- Begin playing an animation
 -- @param animName The name of the animation to play
 function Atlas:playAnim(animName)
     local animDat = self.animations[animName]
     if animDat == nil then
-        print(("animation '%s' does not exist"):format(animName))
+        error(("animation '%s' does not exist"):format(animName), 2)
         return
     end
 
