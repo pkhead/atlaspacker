@@ -111,7 +111,7 @@ local function initApp(appId)
         _shortcuts = {}
     }, appBase)
 
-    local f = loadfile(assert(package.searchpath("init", love.filesystem.getRequirePath())))
+    local f = love.filesystem.load("init.lua")
     f()
 
     if App then

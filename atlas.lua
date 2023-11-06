@@ -1,3 +1,10 @@
+--[[
+    This file handles the loading of atlas files for the editor.
+    They are different files because the editor loads each frame
+    as a separate image, while your game loads the atlas file
+    as an actual sprite atlas.
+--]]
+
 local Atlas = {}
 
 local str_unpack = love.data.unpack
