@@ -13,6 +13,8 @@ local viewAnimEd = false
 
 local intInput = ffi.new("int[1]")
 local boolInput = ffi.new("bool[1]")
+local strBuf = ffi.new("char[256]")
+local strBufLen = 256
 
 local docPropsWindow = {
     show = false
@@ -81,6 +83,7 @@ local function openFile(filePath)
             y = quad.y,
             w = quad.w,
             h = quad.h,
+            resScale = quad.resScale,
             name = quad.name,
             image = quad.image,
             texture = love.graphics.newImage(quad.image)
@@ -227,22 +230,23 @@ function App.draw()
     if docPropsWindow.show then
         boolInput[0] = docPropsWindow.show
 
-        if imgui.Begin("Properties", boolInput, imgui.ImGuiWindowFlags_AlwaysAutoResize) then
+        if imgui.Begin("Properties", boolInput) then
+            imgui.PushItemWidth(-imgui.FLT_MIN)
+
+            -- DOCUMENT PROPERTIES
+            imgui.SeparatorText("Document Properties")
+
             -- labels column
             imgui.BeginGroup()
             imgui.AlignTextToFramePadding()
             imgui.Text("Width")
             imgui.AlignTextToFramePadding()
             imgui.Text("Height")
-            imgui.AlignTextToFramePadding()
-            imgui.Text("Resolution Scale")
             imgui.EndGroup()
 
             -- values column
             imgui.SameLine()
             imgui.BeginGroup()
-
-            imgui.PushItemWidth(imgui.GetTextLineHeight() * 10)
 
             intInput[0] = workspace.width
             if imgui.InputInt("##width", intInput) then
@@ -254,14 +258,41 @@ function App.draw()
                 workspace.height = math.max(intInput[0], 1)
             end
 
-            
-            intInput[0] = workspace.resScale
-            if imgui.InputInt("##scale", intInput) then
-                workspace.resScale = math.max(intInput[0], 1)
+            imgui.EndGroup()
+
+            -- FRAME(s) PROPERTIES
+            imgui.SeparatorText("Selection Properties")
+
+            if #workspace.selectedQuads == 1 then
+                local quad = workspace.quads[workspace.selectedQuads[1]]
+
+                -- labels column
+                imgui.BeginGroup()
+                imgui.AlignTextToFramePadding()
+                imgui.Text("Name")
+                imgui.AlignTextToFramePadding()
+                imgui.Text("Resolution Scale")
+                imgui.EndGroup()
+
+                -- values column
+                imgui.SameLine()
+                imgui.BeginGroup()
+                
+                
+                ffi.copy(strBuf, quad.name)
+                if imgui.InputText("##frame-name", strBuf, strBufLen) then
+                    quad.name = ffi.string(strBuf)
+                end
+                
+                intInput[0] = quad.resScale
+                if imgui.InputInt("##scale", intInput) then
+                    quad.resScale = math.max(intInput[0], 1)
+                end
+
+                imgui.EndGroup()
             end
 
             imgui.PopItemWidth()
-            imgui.EndGroup()
         end
 
         imgui.End()

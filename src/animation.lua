@@ -27,6 +27,7 @@ function AnimationEditor:draw()
     local windowOpen = ffi.new("bool[1]")
     windowOpen[0] = true
 
+    imgui.SetNextWindowSize(imgui.ImVec2_Float(imgui.GetTextLineHeight() * 80, imgui.GetTextLineHeight() * 30), imgui.ImGuiCond_FirstUseEver)
     if imgui.Begin("Animation Editor", windowOpen) then
         if imgui.Button("New") then
             table.insert(workspace.animations, {

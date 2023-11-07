@@ -112,7 +112,7 @@ local function initApp(appId)
         _shortcuts = {}
     }, appBase)
 
-    local f = love.filesystem.load("init.lua")
+    local f = love.filesystem.load("app.lua")
     f()
 
     if App then

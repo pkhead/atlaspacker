@@ -35,6 +35,7 @@ function Workspace:addImage(x, y, name, img)
         w = img:getWidth(),
         h = img:getHeight(),
         name = name,
+        resScale = 1,
 
         image = img,
         texture = love.graphics.newImage(img)

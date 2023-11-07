@@ -56,6 +56,7 @@ function Atlas.read(filePath, separateImages)
             w = w,
             h = h,
             name = name,
+            resScale = 1,
         }
 
         if separateImages then
