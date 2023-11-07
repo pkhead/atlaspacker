@@ -503,6 +503,10 @@ MENU_BAR = {
                 end
             end)},
 
+            {"Trim Selection", App.shortcut("ctrl+t", function()
+                workspace:trimSelection()
+            end)},
+
             {"Set ID", App.shortcut("ctrl+i", function()
                 -- show set id prompt if at least one quad is selected
                 if workspace.selectedQuads[1] then

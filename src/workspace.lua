@@ -149,6 +149,70 @@ function Workspace:mousepressed(x, y, btn)
     end
 end
 
+-- trim excess whitespace on quad
+-- thus recentering the quad
+local function trimQuad(quad)
+    -- get image bounds
+    local minX = math.huge
+    local maxX = 0
+    local minY = nil
+    local maxY = 0
+
+    for y=0, quad.image:getHeight() - 1 do
+        for x=0, quad.image:getWidth() - 1 do
+            local r, g, b, a = quad.image:getPixel(x, y)
+            if a > 0 then
+                if minY == nil then
+                    minY = y
+                end
+
+                maxY = y
+                
+                minX = math.min(minX, x)
+                maxX = math.max(maxX, x)
+            end
+        end
+    end
+
+    -- if image is completely transparent, don't do anything
+    if minY == nil then
+        return
+    end
+
+    -- one pixel border of transparent space
+    minX = math.max(0, minX - 1)
+    minY = math.max(0, minY - 1)
+    maxX = math.min(quad.image:getWidth() - 1, maxX + 1)
+    maxY = math.min(quad.image:getHeight() - 1, maxY + 1)
+
+    -- create cropped image
+    local srcImage = quad.image
+
+    local croppedW = maxX - minX
+    local croppedH = maxY - minY
+    local cropped = love.image.newImageData(croppedW, croppedH)
+    cropped:paste(srcImage, 0, 0, minX, minY, croppedW, croppedH)
+
+    -- realign center
+    local ogX = quad.x
+    local ogY = quad.y
+    
+    quad.image = cropped
+    quad.x = ogX + minX
+    quad.y = ogY + minY
+    quad.cx = quad.cx - minX
+    quad.cy = quad.cy - minY
+    quad.texture = love.graphics.newImage(cropped)
+    quad.w = croppedW
+    quad.h = croppedH
+end
+
+function Workspace:trimSelection()
+    for _, index in ipairs(self.selectedQuads) do
+        trimQuad(self.quads[index])
+    end
+end
+
 function Workspace:mousemoved(x, y, dx, dy)
     local mx, my = self:screenToWorkspace(x, y)
     
