@@ -84,6 +84,8 @@ local function openFile(filePath)
             w = quad.w,
             h = quad.h,
             resScale = quad.resScale,
+            cx = quad.w / 2,
+            cy = quad.h / 2,
             name = quad.name,
             image = quad.image,
             texture = love.graphics.newImage(quad.image)
@@ -91,7 +93,6 @@ local function openFile(filePath)
     end
     
     workspace.animations = data.animations
-    workspace.resScale = data.resScale
 end
 
 local function saveFile(filePath)
@@ -136,6 +137,16 @@ function App.wheelmoved(x, y)
     else
         workspace:zoom(1 / ZOOM_FACTOR, mx, my)
     end
+end
+
+local function selectedQuads()
+    local t = {}
+
+    for _, i in ipairs(workspace.selectedQuads) do
+        table.insert(t, workspace.quads[i])
+    end
+
+    return t
 end
 
 function App.draw()
@@ -263,8 +274,9 @@ function App.draw()
             -- FRAME(s) PROPERTIES
             imgui.SeparatorText("Selection Properties")
 
-            if #workspace.selectedQuads == 1 then
-                local quad = workspace.quads[workspace.selectedQuads[1]]
+            if #workspace.selectedQuads > 0 then
+                local quads = selectedQuads()
+                local firstQuad = workspace.quads[workspace.selectedQuads[1]]
 
                 -- labels column
                 imgui.BeginGroup()
@@ -272,21 +284,76 @@ function App.draw()
                 imgui.Text("Name")
                 imgui.AlignTextToFramePadding()
                 imgui.Text("Resolution Scale")
+                imgui.AlignTextToFramePadding()
+                imgui.Text("Center X")
+                imgui.AlignTextToFramePadding()
+                imgui.Text("Center Y")
                 imgui.EndGroup()
 
                 -- values column
                 imgui.SameLine()
                 imgui.BeginGroup()
-                
-                
-                ffi.copy(strBuf, quad.name)
-                if imgui.InputText("##frame-name", strBuf, strBufLen) then
-                    quad.name = ffi.string(strBuf)
+
+                local quadsName = firstQuad.name
+                local quadResScale = firstQuad.resScale
+                local quadCx = firstQuad.cx
+                local quadCy = firstQuad.cy
+
+                -- get aggregate quad properties
+                for _, quad in ipairs(quads) do -- quad name
+                    if quad.name ~= quadsName then
+                        quadsName = ""
+                        break
+                    end
+                end
+
+                for _, quad in ipairs(quads) do -- res scale
+                    if quad.resScale ~= quadResScale then
+                        quadResScale = 0
+                        break
+                    end
+                end
+
+                for _, quad in ipairs(quads) do -- cx
+                    if quad.cx ~= quadCx then
+                        quadCx = 0
+                        break
+                    end
+                end
+
+                for _, quad in ipairs(quads) do -- cy
+                    if quad.cy ~= quadCy then
+                        quadCy = 0
+                        break
+                    end
                 end
                 
-                intInput[0] = quad.resScale
+                ffi.copy(strBuf, quadsName)
+                if imgui.InputText("##frame-name", strBuf, strBufLen) then
+                    for _, quad in ipairs(quads) do
+                        quad.name = ffi.string(strBuf)
+                    end
+                end
+                
+                intInput[0] = quadResScale
                 if imgui.InputInt("##scale", intInput) then
-                    quad.resScale = math.max(intInput[0], 1)
+                    for _, quad in ipairs(quads) do
+                        quad.resScale = math.max(intInput[0], 1)
+                    end
+                end
+
+                intInput[0] = quadCx
+                if imgui.InputInt("##cx", intInput) then
+                    for _, quad in ipairs(quads) do
+                        quad.cx = intInput[0]
+                    end
+                end
+
+                intInput[0] = quadCy
+                if imgui.InputInt("##cy", intInput) then
+                    for _, quad in ipairs(quads) do
+                        quad.cy = intInput[0]
+                    end
                 end
 
                 imgui.EndGroup()

@@ -277,7 +277,7 @@ function AnimationEditor:draw()
                 local quad = workspace.quads[ assert(animData.frames[self.curFrame]) ]
 
                 if quad then
-                    imgui.Image(quad.texture, imgui.ImVec2_Float(quad.w / workspace.resScale, quad.h / workspace.resScale))
+                    imgui.Image(quad.texture, imgui.ImVec2_Float(quad.w / quad.resScale, quad.h / quad.resScale))
                 end
             end
         end

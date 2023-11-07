@@ -8,7 +8,6 @@ function Workspace.new(w, h)
 
     self.width = w
     self.height = h
-    self.resScale = 1
     self.quads = {}
     self.selectedQuads = {}
     self.animations = {}
@@ -36,6 +35,8 @@ function Workspace:addImage(x, y, name, img)
         h = img:getHeight(),
         name = name,
         resScale = 1,
+        cx = math.floor(img:getWidth() / 2),
+        cy = math.floor(img:getHeight() / 2),
 
         image = img,
         texture = love.graphics.newImage(img)
@@ -352,12 +353,45 @@ function Workspace:draw(checkerboard)
     end, "increment")
 
     -- draw quad textures
-    love.graphics.setColor(1, 1, 1)
+    
+
     for i, quad in pairs(self.quads) do
         if util.aabbIntersects(quad.x, quad.y, quad.w, quad.h, self.viewX, self.viewY, viewW, viewH) then
+            love.graphics.setColor(1, 1, 1)
             love.graphics.draw(quad.texture, quad.x, quad.y)
+
+            local cx = quad.x + quad.cx
+            local cy = quad.y + quad.cy
+            
+            -- draw + (black outline and white innards)
+            for i=1, 2 do
+                local w
+
+                if i == 1 then
+                    w = 12 / self.viewZoom
+                    love.graphics.setLineWidth(4 / self.viewZoom)
+                    love.graphics.setColor(0, 0, 0)
+                elseif i == 2 then
+                    w = 10 / self.viewZoom
+                    love.graphics.setLineWidth(1 / self.viewZoom)
+                    love.graphics.setColor(1, 1, 1)
+                end
+
+                love.graphics.line(
+                    cx, cy - w,
+                    cx, cy + w
+                )
+    
+                love.graphics.line(
+                    cx - w, cy,
+                    cx + w, cy
+                )
+                
+            end
         end
     end
+
+    love.graphics.setLineWidth(1)
     
     -- draw red areas where pixels from frames overlap
     love.graphics.setStencilTest("greater", 1)
