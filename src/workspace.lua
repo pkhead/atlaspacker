@@ -188,8 +188,8 @@ local function trimQuad(quad)
     -- create cropped image
     local srcImage = quad.image
 
-    local croppedW = maxX - minX
-    local croppedH = maxY - minY
+    local croppedW = math.floor(maxX - minX)
+    local croppedH = math.floor(maxY - minY)
     local cropped = love.image.newImageData(croppedW, croppedH)
     cropped:paste(srcImage, 0, 0, minX, minY, croppedW, croppedH)
 
@@ -200,8 +200,8 @@ local function trimQuad(quad)
     quad.image = cropped
     quad.x = ogX + minX
     quad.y = ogY + minY
-    quad.cx = quad.cx - minX
-    quad.cy = quad.cy - minY
+    quad.cx = math.floor(quad.cx - minX)
+    quad.cy = math.floor(quad.cy - minY)
     quad.texture = love.graphics.newImage(cropped)
     quad.w = croppedW
     quad.h = croppedH

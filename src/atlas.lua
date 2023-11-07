@@ -25,10 +25,11 @@ function Atlas.read(filePath, separateImages)
         print("WARNING: Atlas file does not begin with signature. Proceeding anyway for compatibility purposes...")
     end
     
-    local resScale = 1
+    -- global resolution scale only exists in version 1
+    local globalResScale = 1
 
-    if version >= 1 then
-        resScale, offset = str_unpack("<f", fileData, offset)
+    if version == 1 then
+        globalResScale, offset = str_unpack("<f", fileData, offset)
     end
 
     local sizePng
@@ -49,14 +50,24 @@ function Atlas.read(filePath, separateImages)
         local id, x, y, w, h, name, next = str_unpack("<i4i4i4i4i4z", fileData, offset)
         offset = next
 
-        
+        local scale = globalResScale
+        local cx = w / 2
+        local cy = h / 2
+
+        if version >= 2 then
+            local scale, cx, cy
+            scale, cx, cy, offset = str_unpack("<i4i4i4", fileData, offset)
+        end
+
         quads[id] = {
             x = x,
             y = y,
             w = w,
             h = h,
             name = name,
-            resScale = 1,
+            resScale = scale,
+            cx = cx,
+            cy = cy
         }
 
         if separateImages then
@@ -104,7 +115,6 @@ function Atlas.read(filePath, separateImages)
 
     return {
         atlasImage = image,
-        resScale = resScale,
         quads = quads,
         animations = anims
     }
@@ -123,10 +133,7 @@ function Atlas.write(filePath, saveData)
 
     local atlasImageData = atlasImage:encode("png")
 
-    local out = {"Atlas\01"}
-
-    -- write resolution scale
-    table.insert(out, data_pack("string", "<f", saveData.resScale))
+    local out = {"Atlas\02"}
 
     -- write image data
     table.insert(out, data_pack("string", "<s4", atlasImageData:getString()))
@@ -137,7 +144,7 @@ function Atlas.write(filePath, saveData)
     table.insert(out, data_pack("string", "<I4", quadCount))
 
     for id, quad in pairs(saveData.quads) do
-        table.insert(out, data_pack("string", "<i4i4i4i4i4z", id, quad.x, quad.y, quad.w, quad.h, quad.name))
+        table.insert(out, data_pack("string", "<i4i4i4i4i4zi4i4i4", id, quad.x, quad.y, quad.w, quad.h, quad.name, quad.resScale, quad.cx, quad.cy))
     end
 
     -- write animation data
