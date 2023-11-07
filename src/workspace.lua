@@ -85,8 +85,8 @@ function Workspace:resizeToExtents()
 
     -- crop
     for _, quad in pairs(self.quads) do
-        quad.x = quad.x - minX
-        quad.y = quad.y - minY
+        quad.x = math.floor(quad.x - minX)
+        quad.y = math.floor(quad.y - minY)
     end
     self.width = maxX - minX
     self.height = maxY - minY
@@ -268,8 +268,8 @@ function Workspace:mousemoved(x, y, dx, dy)
         for i, idx in ipairs(self.selectedQuads) do
             local quad = self.quads[idx]
 
-            quad.x = self.quadDragOffsets[i][1] + snapX
-            quad.y = self.quadDragOffsets[i][2] + snapY
+            quad.x = math.floor(self.quadDragOffsets[i][1] + snapX + 0.5)
+            quad.y = math.floor(self.quadDragOffsets[i][2] + snapY + 0.5)
         end
     end
 
