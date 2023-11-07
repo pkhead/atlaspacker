@@ -84,8 +84,8 @@ local function openFile(filePath)
             w = quad.w,
             h = quad.h,
             resScale = quad.resScale,
-            cx = quad.w / 2,
-            cy = quad.h / 2,
+            cx = quad.cx,
+            cy = quad.cy,
             name = quad.name,
             image = quad.image,
             texture = love.graphics.newImage(quad.image)

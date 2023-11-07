@@ -1,5 +1,6 @@
 local ffi = require("ffi")
 local util = require("util")
+local Checkerboard = require("checkerboard")
 
 local AnimationEditor = {}
 AnimationEditor.__index = AnimationEditor
@@ -17,6 +18,11 @@ function AnimationEditor.new(workspace)
     self.workspace = workspace
 
     self.play = false
+
+    self.previewW = 256
+    self.previewH = 256
+    self.previewCanvas = love.graphics.newCanvas(self.previewW, self.previewH)
+    self.checkerQuad = love.graphics.newQuad(0, 0, self.previewW / Checkerboard.size, self.previewH / Checkerboard.size, Checkerboard.tex)
     
     return self
 end
@@ -273,18 +279,39 @@ function AnimationEditor:draw()
 
             imgui.SameLine()
 
+            -- update 
             if animData.frames[1] then
                 local quad = workspace.quads[ assert(animData.frames[self.curFrame]) ]
-
-                if quad then
-                    imgui.Image(quad.texture, imgui.ImVec2_Float(quad.w / quad.resScale, quad.h / quad.resScale))
-                end
+        
+                self:updatePreview(quad)
+                imgui.Image(self.previewCanvas, imgui.ImVec2_Float(self.previewW, self.previewH))
             end
         end
     end
     imgui.End()
 
     return windowOpen[0]
+end
+
+function AnimationEditor:updatePreview(quad)
+    love.graphics.push()
+
+    love.graphics.setCanvas(self.previewCanvas)
+    love.graphics.origin()
+    love.graphics.setColor(1, 1, 1)
+    love.graphics.clear(1, 0, 0)
+    love.graphics.draw(Checkerboard.tex, self.checkerQuad, 0, 0, 0, Checkerboard.size, Checkerboard.size)
+
+    love.graphics.draw(
+        quad.texture,
+        self.previewW / 2 - quad.cx / quad.resScale,
+        self.previewH / 2 - quad.cy / quad.resScale,
+        0,
+        1 / quad.resScale, 1 / quad.resScale
+    )
+
+    love.graphics.pop()
+    love.graphics.setCanvas()
 end
 
 return AnimationEditor

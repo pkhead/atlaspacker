@@ -55,7 +55,6 @@ function Atlas.read(filePath, separateImages)
         local cy = h / 2
 
         if version >= 2 then
-            local scale, cx, cy
             scale, cx, cy, offset = str_unpack("<i4i4i4", fileData, offset)
         end
 

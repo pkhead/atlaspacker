@@ -432,11 +432,11 @@ function Workspace:draw(checkerboard)
                 local w
 
                 if i == 1 then
-                    w = 12 / self.viewZoom
+                    w = 7 / self.viewZoom
                     love.graphics.setLineWidth(4 / self.viewZoom)
                     love.graphics.setColor(0, 0, 0)
                 elseif i == 2 then
-                    w = 10 / self.viewZoom
+                    w = 5 / self.viewZoom
                     love.graphics.setLineWidth(1 / self.viewZoom)
                     love.graphics.setColor(1, 1, 1)
                 end

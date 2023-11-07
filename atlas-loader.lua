@@ -2,7 +2,7 @@
 Copyright 2023 pkhead
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software
-and associated documentation files (the “Software”), to deal in the Software without
+and associated documentation files (the "Software"), to deal in the Software without
 restriction, including without limitation the rights to use, copy, modify, merge, publish,
 distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the
 Software is furnished to do so, subject to the following conditions:
@@ -10,7 +10,7 @@ Software is furnished to do so, subject to the following conditions:
 The above copyright notice and this permission notice shall be included in all copies or
 substantial portions of the Software.
 
-THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING
 BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
 NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
 DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
@@ -34,10 +34,11 @@ local function readData(fileData)
         error("invalid atlas file", 3)
     end
     
-    local resScale = 1
+    -- global res scale only exists in version 1 files
+    local globalResScale = 1
 
-    if version >= 1 then
-        resScale, offset = str_unpack("<f", fileData, offset)
+    if version == 1 then
+        globalResScale, offset = str_unpack("<f", fileData, offset)
     end
 
     local sizePng
@@ -55,12 +56,23 @@ local function readData(fileData)
         local id, x, y, w, h, name, next = str_unpack("<i4i4i4i4i4z", fileData, offset)
         offset = next
 
+        local scale = globalResScale
+        local cx = w / 2
+        local cy = h / 2
+
+        if version >= 2 then
+            scale, cx, cy, offset = str_unpack("<i4i4i4", fileData, offset)
+        end
+
         quads[id] = {
+            name = name,
             x = x,
             y = y,
             w = w,
             h = h,
-            name = name,
+            resScale = scale,
+            cx = cx,
+            cy = cy
         }
     end
 
@@ -100,7 +112,6 @@ local function readData(fileData)
 
     return {
         imageData = pngData,
-        resScale = resScale,
         quads = quads,
         animations = anims
     }
@@ -116,7 +127,6 @@ function Atlas.load(path)
     local self = setmetatable({}, Atlas)
 
     self.image = love.graphics.newImage(atlasData.imageData)
-    self.resScale = atlasData.resScale
     self.quadData = atlasData.quads
     self.animations = atlasData.animations
     self.curQuad = 1
@@ -216,6 +226,10 @@ function Atlas:update(dt)
     end
 end
 
+-- Draw the atlas without taking into account
+-- the resolution scale and offset
+-- @param id The ID of the quad to draw
+-- @param ... Transform arguments to pass to `love.graphics.draw` 
 function Atlas:drawRaw(id, ...)
     love.graphics.draw(self.image, self.quads[id], ...)
 end
@@ -234,9 +248,9 @@ function Atlas:draw(x, y, r, sx, sy)
     local quadData = self.quadData[self.curQuad]
 
     love.graphics.draw(self.image, quad,
-        x - quadData.w / (2 * self.resScale) * sx,
-        y - quadData.h / (2 * self.resScale) * sy,
-        r, sx / self.resScale, sy / self.resScale
+        x - quadData.cx / quadData.resScale * sx,
+        y - quadData.cy / quadData.resScale * sy,
+        r, sx / quadData.resScale, sy / quadData.resScale
     )
 end
 
