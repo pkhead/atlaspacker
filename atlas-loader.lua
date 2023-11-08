@@ -213,13 +213,26 @@ function Atlas:getAnimFrames(animName)
     if animDat == nil then
         error(("animation '%s' does not exist"):format(animName), 2)
     end
-
+    
     return animDat.frames
 end
 
 -- Stop the currently playing animation
 function Atlas:stopAnim()
     self.curAnim = nil
+end
+
+--- Display the frame with the given name
+--- @param frameName string The name of the desired frame
+function Atlas:switchToFrame(frameName)
+    for id, quadData in pairs(self.quadData) do
+        if quadData.name == frameName then
+            self.curQuad = id
+            return
+        end
+    end
+
+    error(("frame '%s' not found"):format(frameName))
 end
 
 --- Update the atlas animation
@@ -266,20 +279,22 @@ end
 --- @param self Atlas
 --- @param x number The X coordinate of the center of the frame
 --- @param y number The Y coordinate of the center of the frame
---- @param r number The rotation of the frame
---- @param sx number X scaling
---- @param sy number Y scaling
+--- @param r number? The rotation of the frame
+--- @param sx number? X scaling
+--- @param sy number? Y scaling
 function Atlas:draw(x, y, r, sx, sy)
     sx = sx or 1
     sy = sy or 1
+    r = r or 0
 
     local quad = self.quads[self.curQuad]
     local quadData = self.quadData[self.curQuad]
 
     love.graphics.draw(self.image, quad,
-        x - quadData.cx / quadData.resScale * sx,
-        y - quadData.cy / quadData.resScale * sy,
-        r, sx / quadData.resScale, sy / quadData.resScale
+        x,
+        y,
+        r, sx / quadData.resScale, sy / quadData.resScale,
+        quadData.cx, quadData.cy
     )
 end
 
