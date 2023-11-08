@@ -11,7 +11,7 @@ local json = require("json")
 local str_unpack = love.data.unpack
 local data_pack = love.data.pack
 
-function Atlas.read(filePath, separateImages)
+local function readAtlas(filePath)
     local file = io.open(filePath, "rb")
     assert(file, "Could not open " .. filePath)
     local fileData = file:read("*a")
@@ -70,11 +70,9 @@ function Atlas.read(filePath, separateImages)
             cy = cy
         }
 
-        if separateImages then
-            local quadImage = love.image.newImageData(w, h)
-            quadImage:paste(image, 0, 0, x, y, w, h)
-            quads[id].image = quadImage
-        end
+        local quadImage = love.image.newImageData(w, h)
+        quadImage:paste(image, 0, 0, x, y, w, h)
+        quads[id].image = quadImage
     end
 
     -- read animations
@@ -120,6 +118,107 @@ function Atlas.read(filePath, separateImages)
     }
 end
 
+local function readJson(filePath)
+    local pngFile = io.open(filePath, "rb")
+    assert(pngFile, "Could not open " .. filePath)
+    local jsonFile = io.open(filePath .. ".json", "r")
+    assert(jsonFile, "Could not open " .. filePath .. ".json")
+
+    local jsonData = json.decode(jsonFile:read("*a"))
+    local pngData = love.data.newByteData(pngFile:read("*a"))
+    local image = love.image.newImageData(pngData)
+
+    -- get each frame of the atlas image
+    -- and also create a new texture for each quad
+    local quads = {}
+
+    for _, quadDat in ipairs(jsonData.quads) do
+        assert(type(quadDat.x) == "number")
+        assert(type(quadDat.y) == "number")
+        assert(type(quadDat.w) == "number")
+        assert(type(quadDat.h) == "number")
+        assert(type(quadDat.name) == "string")
+        assert(type(quadDat.resScale) == "number")
+        assert(type(quadDat.cx) == "number")
+        assert(type(quadDat.cy) == "number")
+        assert(type(quadDat.id) == "number")
+
+        quads[quadDat.id] = {
+            x = quadDat.x,
+            y = quadDat.y,
+            w = quadDat.w,
+            h = quadDat.h,
+            name = quadDat.name,
+            resScale = quadDat.resScale,
+            cx = quadDat.cx,
+            cy = quadDat.cy
+        }
+
+        local quadImage = love.image.newImageData(quadDat.w, quadDat.h)
+        quadImage:paste(image, 0, 0, quadDat.x, quadDat.y, quadDat.w, quadDat.h)
+        quads[quadDat.id].image = quadImage
+    end
+
+    -- read animations
+    local anims = {}
+
+    for i, animJson in ipairs(jsonData.animations) do
+        assert(type(animJson.name) == "string")
+        assert(type(animJson.frameLen) == "number")
+        assert(type(animJson.loop) == "number")
+        assert(type(animJson.frames) == "table")
+
+        local animDat = {}
+
+        animDat.name = animJson.name
+        animDat.frameLen = animJson.frameLen
+        local loopData = animJson.loop
+        
+        if loopData == 0 then
+            animDat.doLoop = false
+            animDat.loopPoint = 1
+        else
+            animDat.doLoop = true
+            animDat.loopPoint = loopData
+        end
+
+        -- read frames
+        animDat.frames = {}
+        for j, quadI in ipairs(animJson.frames) do
+            assert(type(animJson.frames[j]) == "number")
+            animDat.frames[j] = quadI
+        end
+
+        anims[i] = animDat
+    end
+
+    pngFile:close()
+    jsonFile:close()
+
+    return {
+        atlasImage = image,
+        quads = quads,
+        animations = anims
+    }
+end
+
+---@alias OpenMode
+---|    "atlas"
+---|    "json"
+
+---@param filePath string
+---@param openMode OpenMode
+---@param separateImages any
+function Atlas.read(filePath, openMode, separateImages)
+    if openMode == "atlas" then
+        return readAtlas(filePath)
+    elseif openMode == "json" then
+        return readJson(filePath)
+    else
+        error(("unknown open mode '%s'"):format(openMode))
+    end
+end
+
 ---@alias SaveMode
 ---|    "atlas"
 ---|    "image"
@@ -151,7 +250,7 @@ function Atlas.write(filePath, saveMode, saveData)
 
         -- if save mode is json, also save quad/animation data as a json file
         if saveMode == "json" then
-            local jsonFile = io.open(filePath .. ".json", "wb")
+            local jsonFile = io.open(filePath .. ".json", "w")
             assert(jsonFile, ("Could not open %s.json"):format(filePath))
 
             local outTable = {
@@ -185,7 +284,7 @@ function Atlas.write(filePath, saveMode, saveData)
                 local animSave = {
                     name = animData.name,
                     frameLen = animData.frameLen,
-                    loopPoint = loopData,
+                    loop = loopData,
                     frames = {}
                 }
 

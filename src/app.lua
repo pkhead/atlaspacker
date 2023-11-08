@@ -67,7 +67,14 @@ local function openFile(filePath)
         return
     end
 
-    local s, data = pcall(Atlas.read, filePath, true)
+    local openMode = "atlas"
+    if App.fileBrowser.selectedFilter == 1 then
+        openMode = "atlas"
+    elseif App.fileBrowser.selectedFilter == 2 then
+        openMode = "json"
+    end
+    
+    local s, data = pcall(Atlas.read, filePath, openMode, true)
     if not s then
         errorWindow.show = true
         errorWindow.msg = data
@@ -461,7 +468,13 @@ MENU_BAR = {
             end)},
 
             {"Open", App.shortcut("ctrl+o", function()
-                App.fileBrowser:open("open", util.ATLAS_FILE_FILTERS, openFile)
+                local fileFilters = {
+                    {"Atlas", "*.atlas"},
+                    {"Image + JSON", "*.png"},
+                    {"Any", "*.*"},
+                }
+
+                App.fileBrowser:open("open", fileFilters, openFile)
             end)},
 
             {"Import...", function()
