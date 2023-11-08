@@ -97,7 +97,7 @@ end
 
 local function saveFile(filePath)
     assert(filePath)
-    local s, err = pcall(Atlas.write, filePath, workspace)
+    local s, err = pcall(Atlas.write, filePath, "atlas", workspace)
     if not s then
         errorWindow.show = true
         errorWindow.msg = err
@@ -475,6 +475,34 @@ MENU_BAR = {
                             x = x + 10
                             y = y + 10
                         end
+                    end
+                end)
+            end},
+
+            {"Export...", function()
+                local EXPORT_FILE_FILTERS = {
+                    {"Image", "*.png"},
+                    {"Image + JSON", "*.png"}
+                }
+
+                App.fileBrowser:open("save", EXPORT_FILE_FILTERS, "", function(path)
+                    if not path then
+                        return
+                    end
+
+                    local saveMode
+                    if App.fileBrowser.selectedFilter == 1 then
+                        saveMode = "image"
+                    elseif App.fileBrowser.selectedFilter == 2 then
+                        saveMode = "json"
+                    else
+                        error("unknown file filter")
+                    end
+
+                    local s, err = pcall(Atlas.write, path, saveMode, workspace)
+                    if not s then
+                        errorWindow.show = true
+                        errorWindow.msg = err
                     end
                 end)
             end},

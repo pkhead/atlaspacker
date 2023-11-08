@@ -6,6 +6,7 @@
 --]]
 
 local Atlas = {}
+local json = require("json")
 
 local str_unpack = love.data.unpack
 local data_pack = love.data.pack
@@ -119,7 +120,19 @@ function Atlas.read(filePath, separateImages)
     }
 end
 
-function Atlas.write(filePath, saveData)
+---@alias SaveMode
+---|    "atlas"
+---|    "image"
+---|    "json"
+
+---@param filePath string
+---@param saveMode SaveMode
+---@param saveData any
+function Atlas.write(filePath, saveMode, saveData)
+    if saveMode ~= "atlas" and saveMode ~= "image" and saveMode ~= "json" then
+        error(("invalid save mode '%s'"):format(saveMode), 2)
+    end
+    
     local file = io.open(filePath, "wb")
     assert(file, "Could not open " .. filePath)
 
@@ -132,44 +145,102 @@ function Atlas.write(filePath, saveData)
 
     local atlasImageData = atlasImage:encode("png")
 
-    local out = {"Atlas\02"}
+    -- save mode is png or png+json, save the png
+    if saveMode == "image" or saveMode == "json" then
+        file:write(atlasImageData:getString())
 
-    -- write image data
-    table.insert(out, data_pack("string", "<s4", atlasImageData:getString()))
+        -- if save mode is json, also save quad/animation data as a json file
+        if saveMode == "json" then
+            local jsonFile = io.open(filePath .. ".json", "wb")
+            assert(jsonFile, ("Could not open %s.json"):format(filePath))
 
-    -- write quad data
-    local quadCount = 0
-    for _, _ in pairs(saveData.quads) do quadCount=quadCount+1 end
-    table.insert(out, data_pack("string", "<I4", quadCount))
+            local outTable = {
+                version = 0,
+                quads = {},
+                animations = {}
+            }
 
-    for id, quad in pairs(saveData.quads) do
-        table.insert(out, data_pack("string", "<i4i4i4i4i4zi4i4i4", id, quad.x, quad.y, quad.w, quad.h, quad.name, quad.resScale, quad.cx, quad.cy))
-    end
+            -- write quad data
+            for id, quad in pairs(saveData.quads) do
+                table.insert(outTable.quads, {
+                    id = id,
+                    name = quad.name,
+                    x = quad.x,
+                    y = quad.y,
+                    w = quad.w,
+                    h = quad.h,
+                    resScale = quad.resScale,
+                    cx = quad.cx,
+                    cy = quad.cy
+                })
+            end
 
-    -- write animation data
-    table.insert(out, data_pack("string", "<I4", #saveData.animations)) -- animation count
+            -- write animation data
+            for _, animData in ipairs(saveData.animations) do
+                local loopData = 0
+                if animData.doLoop then
+                    loopData = animData.loopPoint
+                end
 
-    for _, animData in ipairs(saveData.animations) do
-        local loopData = 0
-        if animData.doLoop then
-            loopData = animData.loopPoint
+                local animSave = {
+                    name = animData.name,
+                    frameLen = animData.frameLen,
+                    loopPoint = loopData,
+                    frames = {}
+                }
+
+                for _, quadId in ipairs(animData.frames) do
+                    table.insert(animSave.frames, quadId)
+                end
+
+                table.insert(outTable.animations, animSave)
+            end
+
+            jsonFile:write(json.encode(outTable))
+            jsonFile:close()
         end
 
-        -- animation name as a zero-terminated string,
-        -- frame length as a uint16,
-        -- loop point as a uint16, if loop is disabled then it stores 0
-        -- number of frames as a uint16
-        table.insert(out, data_pack("string", "<zI4I4I4", animData.name, animData.frameLen, loopData, #animData.frames))
+    -- save mode is atlas
+    elseif saveMode == "atlas" then
+        local out = {"Atlas\02"}
 
-        for _, quadId in ipairs(animData.frames) do
-            -- quad id as a uint16
-            table.insert(out, data_pack("string", "<I4", quadId))
+        -- write image data
+        table.insert(out, data_pack("string", "<s4", atlasImageData:getString()))
+
+        -- write quad data
+        local quadCount = 0
+        for _, _ in pairs(saveData.quads) do quadCount=quadCount+1 end
+        table.insert(out, data_pack("string", "<I4", quadCount))
+
+        for id, quad in pairs(saveData.quads) do
+            table.insert(out, data_pack("string", "<i4i4i4i4i4zi4i4i4", id, quad.x, quad.y, quad.w, quad.h, quad.name, quad.resScale, quad.cx, quad.cy))
         end
-    end
-    
-    -- write data to file
-    for _, data in ipairs(out) do
-        file:write(data)
+
+        -- write animation data
+        table.insert(out, data_pack("string", "<I4", #saveData.animations)) -- animation count
+
+        for _, animData in ipairs(saveData.animations) do
+            local loopData = 0
+            if animData.doLoop then
+                loopData = animData.loopPoint
+            end
+
+            -- animation name as a zero-terminated string,
+            -- frame length as a uint16,
+            -- loop point as a uint16, if loop is disabled then it stores 0
+            -- number of frames as a uint16
+            table.insert(out, data_pack("string", "<zI4I4I4", animData.name, animData.frameLen, loopData, #animData.frames))
+
+            for _, quadId in ipairs(animData.frames) do
+                -- quad id as a uint16
+                table.insert(out, data_pack("string", "<I4", quadId))
+            end
+        end
+        
+        -- write data to file
+        for _, data in ipairs(out) do
+            file:write(data)
+        end
     end
 
     file:close()
