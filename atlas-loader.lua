@@ -17,11 +17,38 @@ DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
 FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 --]]
 
+---@class Atlas.AnimationData
+---@field name string
+---@field frameLen integer
+---@field doLoop boolean
+---@field loopPoint integer
+---@field frames integer[]
+
+---@class Atlas.QuadData
+---@field name string
+---@field x number
+---@field y number
+---@field w number
+---@field h number
+---@field resScale number
+---@field cx number
+---@field cy number
+
+---@class Atlas
+---@field image love.Image
+---@field animations Atlas.AnimationData[]
+---@field quadData Atlas.QuadData[]
+---@field curQuad integer
+---@field curAnim string?
+---@field frame integer
+---@field quads love.Quad[]
+---@field private animTicker integer
 local Atlas = {}
 Atlas.__index = Atlas
 
 local str_unpack = love.data.unpack
 
+---@diagnostic disable:cast-local-type,param-type-mismatch,missing-parameter
 local function readData(fileData)
     -- check signature
     local version = 0
@@ -117,9 +144,9 @@ local function readData(fileData)
     }
 end
 
--- Load an atlas file from a path
--- @param path The path to be loaded by `love.filesystem.read`
--- @returns The newly created atlas
+--- Load an atlas file from a path
+--- @param path string The path to be loaded by `love.filesystem.read`
+--- @return Atlas atlas The newly created atlas
 function Atlas.load(path)
     local fileData, fileSize = love.filesystem.read(path)
     local atlasData = readData(fileData)
@@ -157,14 +184,15 @@ function Atlas:release()
     self.quadData = nil
 end
 
--- Returns true if this atlas has an animation of the given name
--- @param animName The name query
+--- Check if this atlas has an animation with the given name
+--- @param animName string The name to query
+--- @return boolean result True if the atlas has an animation with the given name
 function Atlas:hasAnim(animName)
     return self.animations[animName] ~= nil
 end
 
--- Begin playing an animation
--- @param animName The name of the animation to play
+--- Begin playing an animation
+--- @param animName string The name of the animation to play
 function Atlas:playAnim(animName)
     local animDat = self.animations[animName]
     if animDat == nil then
@@ -178,8 +206,8 @@ function Atlas:playAnim(animName)
     self.curQuad = animDat.frames[1]
 end
 
--- Get the frames of an animation
--- @param animName The name of the animation
+--- Get the frames of an animation
+--- @param animName string The name of the animation
 function Atlas:getAnimFrames(animName)
     local animDat = self.animations[animName]
     if animDat == nil then
@@ -194,8 +222,8 @@ function Atlas:stopAnim()
     self.curAnim = nil
 end
 
--- Update the atlas animation
--- @param dt The delta-time, in seconds
+--- Update the atlas animation
+--- @param dt number The delta-time, in seconds
 function Atlas:update(dt)
     if self.curAnim then
         local animDat = self.animations[self.curAnim]
@@ -226,20 +254,21 @@ function Atlas:update(dt)
     end
 end
 
--- Draw the atlas without taking into account
--- the resolution scale and offset
--- @param id The ID of the quad to draw
--- @param ... Transform arguments to pass to `love.graphics.draw` 
+--- Draw the atlas without taking into account
+--- the resolution scale and offset
+--- @param id string The ID of the quad to draw
+--- @param ... number Transform arguments to pass to `love.graphics.draw` 
 function Atlas:drawRaw(id, ...)
     love.graphics.draw(self.image, self.quads[id], ...)
 end
 
--- Draw the atlas
--- @param x The X coordinate of the center of the frame
--- @param y The Y coordinate of the center of the frame
--- @param r The rotation of the frame
--- @param sx X scaling
--- @param sy Y scaling
+--- Draw the atlas
+--- @param self Atlas
+--- @param x number The X coordinate of the center of the frame
+--- @param y number The Y coordinate of the center of the frame
+--- @param r number The rotation of the frame
+--- @param sx number X scaling
+--- @param sy number Y scaling
 function Atlas:draw(x, y, r, sx, sy)
     sx = sx or 1
     sy = sy or 1
