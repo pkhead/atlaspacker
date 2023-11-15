@@ -31,6 +31,41 @@ local doCloseApp = false
 local fileBrowser = FileBrowser.new()
 fileBrowser:addBookmark("Here", love.filesystem.getWorkingDirectory())
 
+local function renderMenu(menuItems)
+    for _, item in ipairs(menuItems) do
+        if type(item) == "string" then
+            imgui.Separator()
+        else
+            local checked = false
+            if item[3] then
+                checked = item[3]()
+            end
+
+            local shortcut = item[2]
+
+            -- if item is an array of menu items
+            if type(shortcut) == "table" and shortcut[1] then
+                if imgui.BeginMenu(item[1]) then
+                    renderMenu(item[2])
+                    imgui.EndMenu()
+                end
+            
+            -- if item is a shortcut
+            elseif type(shortcut) == "table" then
+                if imgui.MenuItem_Bool(item[1], shortcut.text, checked) then
+                    shortcut.action()
+                end
+            
+            -- if item is a callback function
+            elseif type(shortcut) == "function" then
+                if imgui.MenuItem_Bool(item[1], nil, checked) then
+                    shortcut()
+                end
+            end
+        end
+    end
+end
+
 local appBase = {
     fileBrowser = fileBrowser,
 
@@ -41,29 +76,7 @@ local appBase = {
     renderMenu = function(menuStruct)
         for _, menu in ipairs(menuStruct) do
             if imgui.BeginMenu(menu[1]) then
-                for _, item in ipairs(menu[2]) do
-                    if type(item) == "string" then
-                        imgui.Separator()
-                    else
-                        local checked = false
-                        if item[3] then
-                            checked = item[3]()
-                        end
-
-                        local shortcut = item[2]
-                        
-                        if type(shortcut) == "function" then
-                            if imgui.MenuItem_Bool(item[1], nil, checked) then
-                                shortcut()
-                            end
-                        else
-                            if imgui.MenuItem_Bool(item[1], shortcut.text, checked) then
-                                shortcut.action()
-                            end
-                        end
-                    end
-                end
-
+                renderMenu(menu[2])
                 imgui.EndMenu()
             end
         end

@@ -477,7 +477,28 @@ MENU_BAR = {
                 App.fileBrowser:open("open", fileFilters, openFile)
             end)},
 
-            {"Import...", function()
+            {"Import",
+                {
+                    {"Import Images...", function()
+                        App.fileBrowser:open("multiopen", util.IMAGE_FILE_FILTERS, function(files)
+                            if files then
+                                local x = workspace.viewX
+                                local y = workspace.viewY
+        
+                                for _, file in ipairs(files) do
+                                    importImage(file, x, y)
+                                    x = x + 10
+                                    y = y + 10
+                                end
+                            end
+                        end)
+                    end},
+
+                    {"Import Spritesheet...", function() end},
+                }
+            },
+
+            --[[{"Import...", function()
                 App.fileBrowser:open("multiopen", util.IMAGE_FILE_FILTERS, function(files)
                     if files then
                         local x = workspace.viewX
@@ -490,7 +511,7 @@ MENU_BAR = {
                         end
                     end
                 end)
-            end},
+            end},--]]
 
             {"Export...", function()
                 local EXPORT_FILE_FILTERS = {
