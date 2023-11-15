@@ -62,15 +62,20 @@ local function resetWorkspace(w, h)
 end
 
 local currentFilePath
+local currentFileMode
+
 local function openFile(filePath)
     if not filePath then
         return
     end
 
     local openMode = "atlas"
-    if App.fileBrowser.selectedFilter == 1 then
-        openMode = "atlas"
-    elseif App.fileBrowser.selectedFilter == 2 then
+
+    -- detect open mode from file extension
+    local fileExt = string.match(filePath, ".*%.(.*)$")
+
+    if fileExt == "png" then
+        -- open file.png and file.png.json
         openMode = "json"
     end
     
@@ -82,6 +87,7 @@ local function openFile(filePath)
     end
 
     currentFilePath = filePath
+    currentFileMode = openMode
 
     resetWorkspace(data.atlasImage:getWidth(), data.atlasImage:getHeight())
     for i, quad in pairs(data.quads) do
@@ -102,9 +108,9 @@ local function openFile(filePath)
     workspace.animations = data.animations
 end
 
-local function saveFile(filePath)
+local function saveFile(filePath, fileMode)
     assert(filePath)
-    local s, err = pcall(Atlas.write, filePath, "atlas", workspace)
+    local s, err = pcall(Atlas.write, filePath, fileMode, workspace)
     if not s then
         errorWindow.show = true
         errorWindow.msg = err
@@ -437,34 +443,53 @@ function App.filedropped(file)
 end
 
 local function saveAs(path)
-    if path then
-        local s, err = pcall(saveFile, path)
-        if s then
-            currentFilePath = path
-        else
-            errorWindow.show = true
-            errorWindow.msg = err
-        end
+    if not path then
+        return
+    end
+
+    local saveMode
+    if App.fileBrowser.selectedFilter == 1 then
+        saveMode = "atlas"
+    elseif App.fileBrowser.selectedFilter == 2 then
+        saveMode = "json"
+    else
+        error("unknown file filter")
+    end
+    
+    local s, err = pcall(saveFile, path)
+    if s then
+        currentFilePath = path
+        currentFileMode = saveMode
+    else
+        errorWindow.show = true
+        errorWindow.msg = err
     end
 end
+
+local SAVE_FILE_FILTERS = {
+    {"Atlas", "*.atlas"},
+    {"PNG + JSON", "*.png"}
+}
 
 MENU_BAR = {
     {   "File",
         {
             {"New", App.shortcut("ctrl+n", function()
+                currentFileMode = nil
+                currentFilePath = nil
                 resetWorkspace(100, 100)
             end)},
 
             {"Save", App.shortcut("ctrl+s", function()
                 if currentFilePath then
-                    saveFile(currentFilePath)
+                    saveFile(currentFilePath, currentFileMode)
                 else
-                    App.fileBrowser:open("save", util.ATLAS_FILE_FILTERS, "atlas.atlas", saveAs)
+                    App.fileBrowser:open("save", SAVE_FILE_FILTERS, "atlas.atlas", saveAs)
                 end
             end)},
 
             {"Save As...", App.shortcut("ctrl+shift+s", function()
-                App.fileBrowser:open("save", util.ATLAS_FILE_FILTERS, "atlas.atlas", saveAs)
+                App.fileBrowser:open("save", SAVE_FILE_FILTERS, "atlas.atlas", saveAs)
             end)},
 
             {"Open", App.shortcut("ctrl+o", function()
@@ -513,33 +538,38 @@ MENU_BAR = {
                 end)
             end},--]]
 
-            {"Export...", function()
-                local EXPORT_FILE_FILTERS = {
-                    {"Image", "*.png"},
-                    {"Image + JSON", "*.png"}
+            {"Export",
+                {
+                    {"Export Image", function()
+                        local EXPORT_FILE_FILTERS = {
+                            {"Image", "*.png"},
+                        }
+
+                        App.fileBrowser:open("save", EXPORT_FILE_FILTERS, "", function(path)
+                            if not path then
+                                return
+                            end
+
+                            local saveMode
+                            if App.fileBrowser.selectedFilter == 1 then
+                                saveMode = "image"
+                            else
+                                error("unknown file filter")
+                            end
+
+                            local s, err = pcall(Atlas.write, path, saveMode, workspace)
+                            if not s then
+                                errorWindow.show = true
+                                errorWindow.msg = err
+                            end
+                        end)
+                    end},
+
+                    {"Export Spritesheet", function()
+                    
+                    end}
                 }
-
-                App.fileBrowser:open("save", EXPORT_FILE_FILTERS, "", function(path)
-                    if not path then
-                        return
-                    end
-
-                    local saveMode
-                    if App.fileBrowser.selectedFilter == 1 then
-                        saveMode = "image"
-                    elseif App.fileBrowser.selectedFilter == 2 then
-                        saveMode = "json"
-                    else
-                        error("unknown file filter")
-                    end
-
-                    local s, err = pcall(Atlas.write, path, saveMode, workspace)
-                    if not s then
-                        errorWindow.show = true
-                        errorWindow.msg = err
-                    end
-                end)
-            end},
+            },
 
             {"Exit", App.shortcut("ctrl+w", App.close)}
         }
