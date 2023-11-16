@@ -523,53 +523,47 @@ MENU_BAR = {
                 }
             },
 
-            --[[{"Import...", function()
-                App.fileBrowser:open("multiopen", util.IMAGE_FILE_FILTERS, function(files)
-                    if files then
-                        local x = workspace.viewX
-                        local y = workspace.viewY
-
-                        for _, file in ipairs(files) do
-                            importImage(file, x, y)
-                            x = x + 10
-                            y = y + 10
-                        end
-                    end
-                end)
-            end},--]]
-
-            {"Export",
-                {
-                    {"Export Image", function()
-                        local EXPORT_FILE_FILTERS = {
-                            {"Image", "*.png"},
-                        }
-
-                        App.fileBrowser:open("save", EXPORT_FILE_FILTERS, "", function(path)
-                            if not path then
-                                return
-                            end
-
-                            local saveMode
-                            if App.fileBrowser.selectedFilter == 1 then
-                                saveMode = "image"
-                            else
-                                error("unknown file filter")
-                            end
-
-                            local s, err = pcall(Atlas.write, path, saveMode, workspace)
-                            if not s then
-                                errorWindow.show = true
-                                errorWindow.msg = err
-                            end
-                        end)
-                    end},
-
-                    {"Export Spritesheet", function()
-                    
-                    end}
+            {"Export", function()
+                local EXPORT_FILE_FILTERS = {
+                    {"Image", "*.png"},
+                    {"Aseprite", "*.ase"}
                 }
-            },
+
+                App.fileBrowser:open("save", EXPORT_FILE_FILTERS, "", function(path)
+                    if not path then
+                        return
+                    end
+                    
+                    local fileExt = string.match(path, ".*%.(.*)$")
+
+                    if fileExt == "png" then
+                        local s, err = pcall(Atlas.write, path, "image", workspace)
+                        if not s then
+                            errorWindow.show = true
+                            errorWindow.msg = err
+                        end
+                    
+                    elseif fileExt == "ase" then
+                        local ase = require("ase")
+                        local fileData = ase.export(workspace)
+
+                        local file, err = io.open(path, "wb")
+                        
+                        if file then
+                            file:write(fileData)
+                            file:close()
+                        else
+                            errorWindow.show = true
+                            errorWindow.msg = err
+                        end
+                    
+                    else
+                        errorWindow.show = true
+                        errorWindow.msg = "invalid export type"
+                    end
+
+                end)
+            end},
 
             {"Exit", App.shortcut("ctrl+w", App.close)}
         }

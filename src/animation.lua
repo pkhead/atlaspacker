@@ -2,6 +2,7 @@ local ffi = require("ffi")
 local util = require("util")
 local Checkerboard = require("checkerboard")
 
+---@class AnimationEditor
 local AnimationEditor = {}
 AnimationEditor.__index = AnimationEditor
 
@@ -11,7 +12,9 @@ local inputStr = ffi.new("char[?]", inputStrLen)
 local inputInt = ffi.new("int[1]")
 local inputBool = ffi.new("bool[1]")
 
+---@param workspace Workspace
 function AnimationEditor.new(workspace)
+    ---@class AnimationEditor
     local self = setmetatable({}, AnimationEditor)
     self.selected = 1
     self.curFrame = 1

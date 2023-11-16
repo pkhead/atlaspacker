@@ -1,16 +1,48 @@
 local util = require("util")
 
+---@class ImageQuad
+---@field x integer
+---@field y integer
+---@field w integer
+---@field h integer
+---@field name string
+---@field resScale number
+---@field cx integer
+---@field cy integer
+---@field image love.ImageData
+---@field texture love.Image?
+
+---@class Animation
+---@field name string
+---@field frameLen integer
+---@field doLoop boolean
+---@field loopPoint integer?
+---@field frames integer[]
+
+---@class Workspace
+---@field private dragX number
+---@field private dragY number
+---@field private dragR number
+---@field private dragB number
+---@field private dragW number
+---@field private dragH number
+---@field private quadDragOffsets table
+---@field private mouseStartX number
+---@field private mouseStartY number
 local Workspace = {}
 Workspace.__index = Workspace
 
+---@param w integer
+---@param h integer
 function Workspace.new(w, h)
+    ---@class Workspace
     local self = setmetatable({}, Workspace)
 
     self.width = w
     self.height = h
-    self.quads = {}
-    self.selectedQuads = {}
-    self.animations = {}
+    self.quads = {} ---@type ImageQuad[]
+    self.selectedQuads = {} ---@type integer[]
+    self.animations = {} ---@type Animation[]
     self.isPanning = false
     self.isSelecting = false
     self.isDragging = false
@@ -149,8 +181,9 @@ function Workspace:mousepressed(x, y, btn)
     end
 end
 
--- trim excess whitespace on quad
--- thus recentering the quad
+--- trim excess whitespace on quad,
+--- thus recentering the quad
+---@param quad ImageQuad
 local function trimQuad(quad)
     -- get image bounds
     local minX = math.huge
