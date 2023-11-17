@@ -202,6 +202,8 @@ function FileBrowser:open(mode, fileFilters, defaultName, callback)
     if mode == "multiopen" then
         mode = "open"
         self.multi = true
+    else
+        self.multi = false
     end
 
     -- if last directory no longer exists, then reset back to default
