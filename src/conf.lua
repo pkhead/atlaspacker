@@ -8,6 +8,7 @@ function love.conf(t)
     t.modules.touch = false
     t.modules.video = false
 
+    -- these modules are loaded if app is launched in GUI mode
     t.modules.graphics = false
     t.modules.window = false
     t.modules.timer = false
