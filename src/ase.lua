@@ -36,19 +36,22 @@ function Aseprite.export(workspace)
 
     -- get the size of a rectangle that can fit all quads
     -- accounting for center position
-    for _, quad in ipairs(workspace.quads) do
+    local numQuads = 0
+    for _, quad in pairs(workspace.quads) do
         local newWidth = 2 * math.abs(quad.cx - quad.w/2) + quad.w
         local newHeight = 2 * math.abs(quad.cy - quad.h/2) + quad.h
         
         maxWidth = math.max(maxWidth, newWidth)
         maxHeight = math.max(maxHeight, newHeight)
+
+        numQuads=numQuads+1
     end
 
     local aseOut = Queue.new()
 
     -- file header (without file size)
     aseOut:push(strpack("<I2", 0xA5E0)) -- magic number
-    aseOut:push(strpack("<I2", #workspace.quads)) -- frame count
+    aseOut:push(strpack("<I2", numQuads)) -- frame count
     aseOut:push(strpack("<I2I2", maxWidth, maxHeight)) -- frame size
     aseOut:push(strpack("<I2", 32)) -- RGBA
     aseOut:push(strpack("<I4", 0)) -- no layer opacity
@@ -59,24 +62,25 @@ function Aseprite.export(workspace)
     aseOut:push(string.rep("\0", 94)) -- reserved
 
     -- frame data
-    for i, quad in ipairs(workspace.quads) do
+    local quadIndex = 1
+    for _, quad in pairs(workspace.quads) do
         local frameOut = Queue.new()
 
         frameOut:push(strpack("<I2", 0xF1FA)) -- magic number
 
         -- spec requires that first frame stores a Layer Chunk
         -- which means first chunk has 2 chunks, not 1
-        if i == 1 then
+        if quadIndex == 1 then
             frameOut:push(strpack("<I2", 2))
         else
-            frameOut:push(strpack("<I2", 2))
+            frameOut:push(strpack("<I2", 1))
         end
 
         frameOut:push(strpack("<I2", 1000)) -- frame duration in ms
         frameOut:push(string.rep("\0", 6)) -- reserved
 
         -- layer chunk in first frame
-        if i == 1 then
+        if quadIndex == 1 then
             local chunkQueue = Queue.new()
 
             chunkQueue:push(strpack("<I2I2I2I2I2I2I1c3s2",
@@ -88,12 +92,12 @@ function Aseprite.export(workspace)
                 0,          -- WORD     blend mode (normal)
                 0,          -- BYTE     opacity (marked unused)
                 "\0\0\0",   -- BYTE[3]  reserved
-                "Layer"     -- STRING   layer name
+                "Layer 1"     -- STRING   layer name
             ))
 
             -- commit chunk
             local chunkData = chunkQueue:concat()
-            frameOut:push(strpack("<I4", string.len(chunkData)))
+            frameOut:push(strpack("<I4", string.len(chunkData) + 6))
             frameOut:push(strpack("<I2", 0x2004))
             frameOut:push(chunkData)
         end
@@ -109,28 +113,45 @@ function Aseprite.export(workspace)
                 0,                  -- WORD: cel type (raw cell)
                 string.rep("\0", 7),-- reserved
     
-                quad.w,             -- WORD: width
-                quad.h              -- WORD: height
+                maxWidth,           -- WORD: width
+                maxHeight           -- WORD: height
             ))
 
             -- write pixel data into chunk queue
-            for y=0, quad.image:getHeight()-1 do
-                for x=0, quad.image:getWidth()-1 do
-                    local r, g, b, a = quad.image:getPixel(x, y)
+            local ox = math.floor(maxWidth/2 - quad.cx)
+            local oy = math.floor(maxHeight/2 - quad.cy)
+            local w = quad.image:getWidth()
+            local h = quad.image:getHeight()
+            
+            for y=0, maxHeight-1 do
+                for x=0, maxWidth-1 do
+                    local mx, my = x - ox, y - oy
+                    local r, g, b, a = 0, 0, 0, 0
+
+                    if mx >= 0 and my >= 0 and mx < w and my < h then
+                        r, g, b, a = quad.image:getPixel(mx, my)
+                    end
+
                     chunkQueue:push(strpack("<I1I1I1I1", r * 255, g * 255, b * 255, a * 255))
                 end
             end
 
             -- commit chunk
             local chunkData = chunkQueue:concat()
-            frameOut:push(strpack("<I4", string.len(chunkData)))
+            frameOut:push(strpack("<I4", string.len(chunkData) + 6))
             frameOut:push(strpack("<I2", 0x2005))
             frameOut:push(chunkData)
+
+            print("cel chunk")
         end
 
         local frameData = frameOut:concat()
-        aseOut:push(strpack("<I4", string.len(frameData)))
+        aseOut:push(strpack("<I4", string.len(frameData) + 4))
         aseOut:push(frameData)
+
+        print("write frame")
+
+        quadIndex = quadIndex + 1
     end
 
     -- commit ase file

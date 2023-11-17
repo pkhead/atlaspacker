@@ -456,7 +456,7 @@ local function saveAs(path)
         error("unknown file filter")
     end
     
-    local s, err = pcall(saveFile, path)
+    local s, err = pcall(saveFile, path, saveMode)
     if s then
         currentFilePath = path
         currentFileMode = saveMode
