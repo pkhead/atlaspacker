@@ -8,6 +8,10 @@ function love.conf(t)
     t.modules.touch = false
     t.modules.video = false
 
+    t.modules.graphics = false
+    t.modules.window = false
+    t.modules.timer = false
+
     t.window.title = "Atlaspacker"
     t.window.width = 1280
     t.window.height = 720

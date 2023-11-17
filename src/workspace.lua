@@ -47,11 +47,43 @@ function Workspace.new(w, h)
     self.isSelecting = false
     self.isDragging = false
     
-    self.viewX = -(love.graphics.getWidth() - self.width) / 2
-    self.viewY = -(love.graphics.getHeight() - self.height) / 2
-    self.viewZoom = 1
+    if love.graphics then
+        self.viewX = -(love.graphics.getWidth() - self.width) / 2
+        self.viewY = -(love.graphics.getHeight() - self.height) / 2
+        self.viewZoom = 1
+    end
 
     return self
+end
+
+---@param data table Output from Atlas.load
+---@return Workspace
+function Workspace.load(data)
+    local workspace = Workspace.new(data.atlasImage:getWidth(), data.atlasImage:getHeight())
+    for i, quad in pairs(data.quads) do
+        local texture = nil
+
+        if love.graphics then
+            texture = love.graphics.newImage(quad.image)
+        end
+
+        workspace.quads[i] = {
+            x = quad.x,
+            y = quad.y,
+            w = quad.w,
+            h = quad.h,
+            resScale = quad.resScale,
+            cx = quad.cx,
+            cy = quad.cy,
+            name = quad.name,
+            image = quad.image,
+            texture = texture
+        }
+    end
+    
+    workspace.animations = data.animations
+
+    return workspace
 end
 
 function Workspace:addImage(x, y, name, img)
@@ -415,12 +447,14 @@ function Workspace:zoom(factor, mx, my)
     self.viewY = -(my - self.viewY) / factor + my
 end
 
-local transparencyShader = love.graphics.newShader([[
-vec4 effect(vec4 color, Image tex, vec2 texture_coords, vec2 screen_coords) {
-    vec4 tex_color = Texel(tex, texture_coords);
-    return color * tex_color.a;
-}
-]])
+if love.graphics then
+    local transparencyShader = love.graphics.newShader([[
+    vec4 effect(vec4 color, Image tex, vec2 texture_coords, vec2 screen_coords) {
+        vec4 tex_color = Texel(tex, texture_coords);
+        return color * tex_color.a;
+    }
+    ]])
+end
 
 function Workspace:draw(checkerboard)
     local imViewport = imgui.GetMainViewport()

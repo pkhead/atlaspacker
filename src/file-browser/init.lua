@@ -94,46 +94,60 @@ end
 -- initial directory is the game directory
 local SYSTEM_DEFAULT_PATH = HOME
 
--- load icons
-local fileIcon = love.graphics.newImage("file-browser/file-icon.png")
-local dirIcon = love.graphics.newImage("file-browser/directory-icon.png")
-local typeUnknown = love.graphics.newImage("file-browser/unknown.png")
-local imageIcon = love.graphics.newImage("file-browser/image-icon.png")
-local audioIcon = love.graphics.newImage("file-browser/audio-icon.png")
-local deleteIcon = love.graphics.newImage("file-browser/delete.png")
-local backIcon = love.graphics.newImage("file-browser/back.png")
-local forwardIcon = love.graphics.newImage("file-browser/forward.png")
-local upIcon = love.graphics.newImage("file-browser/up.png")
-local fileTypeIcons = {
-    atlas = love.graphics.newImage("file-browser/atlas-icon.png"),
-    lua = love.graphics.newImage("file-browser/lua-icon.png"),
-    
-    -- images
-    jpg = imageIcon,
-    jpeg = imageIcon,
-    png = imageIcon,
-    bmp = imageIcon,
-    tga = imageIcon,
-    hdr = imageIcon,
-    pic = imageIcon,
-    exr = imageIcon,
-
-    -- audio
-    mp3 = audioIcon,
-    ogg = audioIcon,
-    wav = audioIcon,
-
-    -- love supports tracker files???
-    mod = audioIcon,
-    s3m = audioIcon,
-    xm = audioIcon,
-    it = audioIcon
-    -- not listing all of them here
-}
+-- icons
+local fileIcon
+local dirIcon
+local typeUnknown
+local imageIcon
+local audioIcon
+local deleteIcon
+local backIcon
+local forwardIcon
+local upIcon
+local fileTypeIcons
 
 -- File browser class
 local FileBrowser = {}
 FileBrowser.__index = FileBrowser
+
+function FileBrowser.init()
+    -- load icons
+    fileIcon = love.graphics.newImage("file-browser/file-icon.png")
+    dirIcon = love.graphics.newImage("file-browser/directory-icon.png")
+    typeUnknown = love.graphics.newImage("file-browser/unknown.png")
+    imageIcon = love.graphics.newImage("file-browser/image-icon.png")
+    audioIcon = love.graphics.newImage("file-browser/audio-icon.png")
+    deleteIcon = love.graphics.newImage("file-browser/delete.png")
+    backIcon = love.graphics.newImage("file-browser/back.png")
+    forwardIcon = love.graphics.newImage("file-browser/forward.png")
+    upIcon = love.graphics.newImage("file-browser/up.png")
+    fileTypeIcons = {
+        atlas = love.graphics.newImage("file-browser/atlas-icon.png"),
+        lua = love.graphics.newImage("file-browser/lua-icon.png"),
+        
+        -- images
+        jpg = imageIcon,
+        jpeg = imageIcon,
+        png = imageIcon,
+        bmp = imageIcon,
+        tga = imageIcon,
+        hdr = imageIcon,
+        pic = imageIcon,
+        exr = imageIcon,
+
+        -- audio
+        mp3 = audioIcon,
+        ogg = audioIcon,
+        wav = audioIcon,
+
+        -- love supports tracker files???
+        mod = audioIcon,
+        s3m = audioIcon,
+        xm = audioIcon,
+        it = audioIcon
+        -- not listing all of them here
+    }
+end
 
 function FileBrowser.new(root)
     local self = setmetatable({}, FileBrowser)

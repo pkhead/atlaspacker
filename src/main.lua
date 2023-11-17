@@ -86,8 +86,6 @@ local appBase = {
         fileBrowser:open(...)
     end,
 
-    font = love.graphics.newFont("ProggyClean.ttf", 16),
-
     shortcut = function(shortcut, callback)
         local modifiers = {}
         for key in string.gmatch(shortcut, "([^+]+)") do
@@ -118,9 +116,15 @@ local appBase = {
 }
 appBase.__index = appBase
 
-appBase.font:setFilter("nearest", "nearest")
+-- start up GUI
+local function initApp()
+    love.graphics.setDefaultFilter("nearest", "nearest")
 
-local function initApp(appId)
+    appBase.font = love.graphics.newFont("ProggyClean.ttf", 16)
+    FileBrowser.init()
+
+    imgui.love.Init()
+
     _G.App = setmetatable({
         _shortcuts = {}
     }, appBase)
@@ -141,10 +145,33 @@ local function closeApp()
     App = nil
 end
 
-function love.load()
-    imgui.love.Init()
-    love.graphics.setBackgroundColor(0, 0, 0)
+local loveRun = love.run
+assert(loveRun)
 
+function love.run()
+    local args = love.arg.parseGameArguments(arg)
+    
+    if #args > 0 then
+        local cli = require("cli")
+        local s, err = pcall(cli, args)
+
+        if not s then
+            io.write("error: ")
+            print(err)
+        end
+    else
+        require("love.window")
+        require("love.graphics")
+        require("love.timer")
+
+        love.window.setMode(1280, 720)
+        love.window.setTitle("atlaspacker")
+
+        return loveRun()
+    end
+end
+
+function love.load()
     initApp()
 end
 

@@ -68,8 +68,8 @@ local function parseWorkspace(workspace)
 
         if anim.doLoop then
             table.insert(tags, {
-                from = from,
-                to = to + anim.loopPoint - 1,
+                from = from + anim.loopPoint - 1,
+                to = to,
                 name = anim.name .. "-loop"
             })
         end
@@ -243,8 +243,6 @@ function Aseprite.export(workspace)
         local frameData = frameOut:concat()
         aseOut:push(strpack("<I4", string.len(frameData) + 4))
         aseOut:push(frameData)
-
-        print("write frame")
     end
 
     -- commit ase file

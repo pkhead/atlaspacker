@@ -89,23 +89,8 @@ local function openFile(filePath)
     currentFilePath = filePath
     currentFileMode = openMode
 
-    resetWorkspace(data.atlasImage:getWidth(), data.atlasImage:getHeight())
-    for i, quad in pairs(data.quads) do
-        workspace.quads[i] = {
-            x = quad.x,
-            y = quad.y,
-            w = quad.w,
-            h = quad.h,
-            resScale = quad.resScale,
-            cx = quad.cx,
-            cy = quad.cy,
-            name = quad.name,
-            image = quad.image,
-            texture = love.graphics.newImage(quad.image)
-        }
-    end
-    
-    workspace.animations = data.animations
+    workspace = Workspace.load(data)
+    animEd = AnimationEditor.new(workspace)
 end
 
 local function saveFile(filePath, fileMode)
