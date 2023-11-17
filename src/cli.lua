@@ -8,11 +8,12 @@ return function(args)
         print("run with no arguments to launch GUI")
         print("")
         print("commands:")
+        print(" [atlas]\t\t\topen GUI with the given atlas file")
         print(" --help\t\t\t\tshow this help text")
         print(" --to-ase [atlas] [ase]\t\tconvert an atlas file to an aseprite file")
         print(" --to-pngjson [atlas] [png]\tconvert an atlas file to a png and json file")
         print(" --from-pngjson [png] [atlas]\tconvert a png and json file to an atlas file")
-        return
+        return true
     end
     
     if args[1] == "--to-ase" then
@@ -34,7 +35,7 @@ return function(args)
 
         file:write(data)
         file:close()
-        return
+        return true
     end
 
     if args[1] == "--to-pngjson" then
@@ -49,7 +50,7 @@ return function(args)
         local workspace = Workspace.load(Atlas.read(args[2], "atlas", true))
         Atlas.write(args[3], "json", workspace)
         
-        return
+        return true
     end
 
     if args[1] == "--from-pngjson" then
@@ -64,8 +65,12 @@ return function(args)
         local workspace = Workspace.load(Atlas.read(args[2], "json", true))
         Atlas.write(args[3], "atlas", workspace)
         
-        return
+        return true
     end
 
-    error(("unknown argument '%s'"):format(args[1]), 2)
+    if args[1]:sub(1, 1) == "-" then
+        error(("unknown argument '%s'"):format(args[1]), 2)
+    end
+
+    return false
 end

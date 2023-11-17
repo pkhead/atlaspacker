@@ -117,7 +117,7 @@ local appBase = {
 appBase.__index = appBase
 
 -- start up GUI
-local function initApp()
+local function initApp(args)
     love.graphics.setDefaultFilter("nearest", "nearest")
 
     appBase.font = love.graphics.newFont("ProggyClean.ttf", 16)
@@ -136,7 +136,7 @@ local function initApp()
         love.graphics.setBackgroundColor(0.4, 0.4, 0.4)
         
         if App.load then
-            App.load()
+            App.load(args)
         end
     end
 end
@@ -151,28 +151,38 @@ assert(loveRun)
 function love.run()
     local args = love.arg.parseGameArguments(arg)
     
-    if #args > 0 then
-        local cli = require("cli")
-        local s, err = pcall(cli, args)
-
-        if not s then
-            io.write("error: ")
-            print(err)
-        end
-    else
+    local function gui()
         require("love.window")
         require("love.graphics")
         require("love.timer")
 
-        love.window.setMode(1280, 720)
         love.window.setTitle("atlaspacker")
+        assert(love.window.setMode(1280, 720, {
+            resizable = true
+        }), "Could not set window mode")
 
         return loveRun()
     end
+    
+    if #args > 0 then
+        local cli = require("cli")
+        local s, err = pcall(cli, args)
+
+        if s then
+            if not err then
+                return gui()
+            end
+        else
+            io.write("error: ")
+            print(err)
+        end
+    else
+        return gui()
+    end
 end
 
-function love.load()
-    initApp()
+function love.load(args)
+    initApp(args)
 end
 
 function love.draw()

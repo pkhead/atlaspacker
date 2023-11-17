@@ -102,9 +102,13 @@ local function saveFile(filePath, fileMode)
     end
 end
 
-function App.load()
+function App.load(args)
     checkerboard.refresh()
     resetWorkspace(100, 100)
+
+    if args[1] then
+        openFile(args[1])
+    end
 end
 
 function App.resize(w, h)
